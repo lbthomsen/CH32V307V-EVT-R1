@@ -1,5 +1,5 @@
 Mcu Type=CH32V30x
-Target Path=obj\CH32V307VCT6.hex
+Target Path=obj\blink1.hex
 Address=0x08000000
 Erase All=true
 Program=true
