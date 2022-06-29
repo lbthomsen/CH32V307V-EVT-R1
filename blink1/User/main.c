@@ -11,9 +11,7 @@
 #include "ch32v30x.h"
 
 #include "debug.h"
-
 #include "systick.h"
-
 
 /* Global typedef */
 
@@ -54,11 +52,14 @@ void GPIOS_Init(void) {
  * @return  none
  */
 int main(void) {
+
+	// Get the systick counter running
+	Systick_Init();
+
 	USART_Printf_Init(115200);
 	printf("SystemClk:%d\r\n",SystemCoreClock);
 	printf("SysTick Test\r\n");
 
-	Systick_Init();
 	GPIOS_Init();
 
 	uint32_t last_tick = 0;

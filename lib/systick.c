@@ -5,7 +5,7 @@
  *      Author: lth
  */
 
-#include "ch32v30x.h"
+//#include "ch32v30x.h"
 #include "systick.h"
 
 uint32_t uwTick = 0;
@@ -39,7 +39,7 @@ void Systick_Init(void) {
     NVIC_Init(&NVIC_InitStructure);
 
     /*Configuration timer*/
-    SysTick->CTLR= 0;
+	SysTick->CTLR= 0;
     SysTick->SR  = 0;
     SysTick->CNT = 0;
     SysTick->CMP = SystemCoreClock / 1000; //The latter 1000 represents 1000Hz (that is, 1MS to interrupt once)
