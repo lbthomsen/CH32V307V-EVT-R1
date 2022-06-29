@@ -8,7 +8,11 @@
 * SPDX-License-Identifier: MIT
 *******************************************************************************/
 
+#include "ch32v30x.h"
+
 #include "debug.h"
+
+#include "systick.h"
 
 
 /* Global typedef */
@@ -16,34 +20,7 @@
 /* Global define */
 
 /* Global Variable */
-uint32_t uwTick = 0;
 
-void SysTick_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-
-/*********************************************************************
- * @fn      Systick_Init
- *
- * @brief   Initializes Systick.
- *
- * @return  none
- */
-void Systick_Init(void)
-{
-    /*Configuration interrupt priority*/
-    NVIC_InitTypeDef NVIC_InitStructure = {0};
-    NVIC_InitStructure.NVIC_IRQChannel = SysTicK_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;//Seeing priority
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;//Response priority
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;//Enable
-    NVIC_Init(&NVIC_InitStructure);
-
-    /*Configuration timer*/
-    SysTick->CTLR= 0;
-    SysTick->SR  = 0;
-    SysTick->CNT = 0;
-    SysTick->CMP = SystemCoreClock / 1000; //The latter 1000 represents 1000Hz (that is, 1MS to interrupt once)
-    SysTick->CTLR= 0xf;
-}
 
 /*********************************************************************
  * @fn      GPIO_Init
@@ -52,8 +29,7 @@ void Systick_Init(void)
  *
  * @return  none
  */
-void GPIOS_Init(void)
-{
+void GPIOS_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure = {0};
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -77,8 +53,7 @@ void GPIOS_Init(void)
  *
  * @return  none
  */
-int main(void)
-{
+int main(void) {
 	USART_Printf_Init(115200);
 	printf("SystemClk:%d\r\n",SystemCoreClock);
 	printf("SysTick Test\r\n");
@@ -92,10 +67,9 @@ int main(void)
 	uint8_t l0 = 0;
 	uint8_t l1 = 1;
 
-	while(1)
-    {
+	while(1) {
 
-		uint32_t now = uwTick;
+		uint32_t now = GetTick();
 
 		if (now - last_toggle >= 500) {
 
@@ -115,18 +89,5 @@ int main(void)
 		++loop;
 
 	}
-}
-
-/*********************************************************************
- * @fn      SysTick_Handler
- *
- * @brief   This function handles SysTick exception.
- *
- * @return  none
- */
-void SysTick_Handler(void)
-{
-	SysTick->SR=0;
-	++uwTick;
 }
 
