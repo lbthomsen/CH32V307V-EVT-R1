@@ -19,7 +19,6 @@
 
 /* Global Variable */
 
-
 /*********************************************************************
  * @fn      GPIO_Init
  *
@@ -81,7 +80,7 @@ int main(void) {
 		}
 
 		if (now - last_tick >= 1000) {
-			printf("Tick = %lu - count = %lu\n", now, loop);
+			printf("Tick = %lu - count = %lu\n", now / 1000, loop);
 
 			loop = 0;
 			last_tick = now;
