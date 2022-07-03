@@ -1,11 +1,11 @@
 /********************************** (C) COPYRIGHT *******************************
-* File Name          : main.c
-* Author             : Lars Boegild Thomsen <lbthomsen@gmail.com>
-* Version            : V1.0.0
-* Description        : Main program body.
-* Copyright (c) 2022 Lars Boegild Thomsen
-* SPDX-License-Identifier: MIT
-*******************************************************************************/
+ * File Name          : main.c
+ * Author             : Lars Boegild Thomsen <lbthomsen@gmail.com>
+ * Version            : V1.0.0
+ * Description        : Main program body.
+ * Copyright (c) 2022 Lars Boegild Thomsen
+ * SPDX-License-Identifier: MIT
+ *******************************************************************************/
 
 #include <stdio.h>
 #include <math.h>
@@ -15,18 +15,29 @@
 
 /* Global typedef */
 
+typedef struct {
+	float angle;
+	float angular_speed;
+	float amplitude;
+
+} Osc_TypeDef;
+
 /* Global define */
 #define BUFFER_SIZE 48 // 48 kHz every 1 ms
 #define Num 64
 
 /* Global Variable */
-uint16_t buf1[2 * BUFFER_SIZE], buf2[2 * BUFFER_SIZE];
-uint16_t buf2[2 * BUFFER_SIZE], buf2[2 * BUFFER_SIZE];
 
-uint32_t DAC_Value[Num]={2048,2248,2447,2642,2831,3013,3185,3347,3496,3631,3750,3854,3940,4007,4056,4086,
-                         4095,4086,4056,4007,3940,3854,3750,3631,3496,3347,3185,3013,2831,2642,2447,2248,
-                         2048,1847,1648,1453,1264,1082,910 ,748 ,599 ,464 ,345 ,241 ,155 ,88  ,39  ,9   ,
-                         0   ,9   ,39  ,88  ,155 ,241 ,345 ,464 ,599 ,748 ,910 ,1082,1264,1453,1648,1847};
+Osc_TypeDef osc1, osc2;
+
+uint32_t dac_buffer[2 * BUFFER_SIZE]; // High 16 bit dac out 2, low 16 bit dac out 1
+
+uint32_t DAC_Value[Num] = { 2048, 2248, 2447, 2642, 2831, 3013, 3185, 3347,
+		3496, 3631, 3750, 3854, 3940, 4007, 4056, 4086, 4095, 4086, 4056, 4007,
+		3940, 3854, 3750, 3631, 3496, 3347, 3185, 3013, 2831, 2642, 2447, 2248,
+		2048, 1847, 1648, 1453, 1264, 1082, 910, 748, 599, 464, 345, 241, 155,
+		88, 39, 9, 0, 9, 39, 88, 155, 241, 345, 464, 599, 748, 910, 1082, 1264,
+		1453, 1648, 1847 };
 
 uint32_t Dual_DAC_Value[Num];
 
@@ -34,24 +45,24 @@ uint32_t full_count = 0, half_count = 0;
 
 __attribute__((interrupt("WCH-Interrupt-fast"))) void DMA2_Channel3_IRQHandler() {
 
-	if( DMA_GetITStatus(DMA2_IT_TC3) != RESET ) {
-            ++full_count;
-            DMA_ClearITPendingBit(DMA2_IT_TC3);
-    } else if( DMA_GetITStatus(DMA2_IT_HT3) != RESET ) {
-    	++half_count;
-    	DMA_ClearITPendingBit(DMA2_IT_HT3);
-    }
+	if (DMA_GetITStatus(DMA2_IT_TC3) != RESET) {
+		++full_count;
+		DMA_ClearITPendingBit(DMA2_IT_TC3);
+	} else if (DMA_GetITStatus(DMA2_IT_HT3) != RESET) {
+		++half_count;
+		DMA_ClearITPendingBit(DMA2_IT_HT3);
+	}
 
 }
 
 void Dac_Interrupt_Init() {
-    /*Configuration interrupt priority*/
-    NVIC_InitTypeDef NVIC_InitStructure = {0};
-    NVIC_InitStructure.NVIC_IRQChannel = DMA2_Channel3_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;//Seeing priority
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;//Response priority
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;//Enable
-    NVIC_Init(&NVIC_InitStructure);
+	/*Configuration interrupt priority*/
+	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
+	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Channel3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //Seeing priority
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0; //Response priority
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //Enable
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 /*********************************************************************
@@ -61,36 +72,33 @@ void Dac_Interrupt_Init() {
  *
  * @return  none
  */
-void Dual_Dac_Init(void)
-{
-	GPIO_InitTypeDef GPIO_InitStructure={0};
-	DAC_InitTypeDef DAC_InitType={0};
+void Dual_Dac_Init(void) {
+	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+	DAC_InitTypeDef DAC_InitType = { 0 };
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE );
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE );
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4|GPIO_Pin_5;
- 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
- 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
- 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	GPIO_SetBits(GPIOA,GPIO_Pin_4);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 
-	DAC_InitType.DAC_Trigger=DAC_Trigger_T4_TRGO;
-	DAC_InitType.DAC_WaveGeneration=DAC_WaveGeneration_None;
-	DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude=DAC_LFSRUnmask_Bit0;
-	DAC_InitType.DAC_OutputBuffer=DAC_OutputBuffer_Disable ;
-    DAC_Init(DAC_Channel_1,&DAC_InitType);
-    DAC_Init(DAC_Channel_2,&DAC_InitType);
+	DAC_InitType.DAC_Trigger = DAC_Trigger_T4_TRGO;
+	DAC_InitType.DAC_WaveGeneration = DAC_WaveGeneration_None;
+	DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;
+	DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
+	DAC_Init(DAC_Channel_1, &DAC_InitType);
+	DAC_Init(DAC_Channel_2, &DAC_InitType);
 
-    DAC_Cmd(DAC_Channel_1, ENABLE);
-    DAC_Cmd(DAC_Channel_2, ENABLE);
+	DAC_Cmd(DAC_Channel_1, ENABLE);
+	DAC_Cmd(DAC_Channel_2, ENABLE);
 
-    DAC_DMACmd(DAC_Channel_1,ENABLE);
-    DAC_DMACmd(DAC_Channel_2,ENABLE);
+	DAC_DMACmd(DAC_Channel_1, ENABLE);
+	DAC_DMACmd(DAC_Channel_2, ENABLE);
 
-    //DMA_ITConfig(DMA2_Channel3, DMA_IT_TC, ENABLE);
-
-    DAC_SetDualChannelData(DAC_Align_12b_R, 0x123,0x321);
+	DAC_SetDualChannelData(DAC_Align_12b_R, 0x123, 0x321);
 }
 
 /*********************************************************************
@@ -100,30 +108,29 @@ void Dual_Dac_Init(void)
  *
  * @return  none
  */
-void Dac_Dma_Init(void)
-{
-    DMA_InitTypeDef DMA_InitStructure={0};
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA2, ENABLE);
+void Dac_Dma_Init(void) {
+	DMA_InitTypeDef DMA_InitStructure = { 0 };
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA2, ENABLE);
 
-    DMA_StructInit( &DMA_InitStructure);
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&(DAC->RD12BDHR);
-    DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)&Dual_DAC_Value[0];
-    DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_BufferSize = Num;
-    DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
-    DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
-    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+	DMA_StructInit(&DMA_InitStructure);
+	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(DAC->RD12BDHR);
+	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) &Dual_DAC_Value[0];
+	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+	DMA_InitStructure.DMA_BufferSize = Num;
+	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
+	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+	DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-    DMA_Init(DMA2_Channel3, &DMA_InitStructure);
+	DMA_Init(DMA2_Channel3, &DMA_InitStructure);
 
-    DMA_ITConfig(DMA2_Channel3, DMA_IT_TC, ENABLE);
-    DMA_ITConfig(DMA2_Channel3, DMA_IT_HT, ENABLE);
+	DMA_ITConfig(DMA2_Channel3, DMA_IT_TC, ENABLE);
+	DMA_ITConfig(DMA2_Channel3, DMA_IT_HT, ENABLE);
 
-    DMA_Cmd(DMA2_Channel3, ENABLE);
+	DMA_Cmd(DMA2_Channel3, ENABLE);
 
 }
 
@@ -134,20 +141,19 @@ void Dac_Dma_Init(void)
  *
  * @return  none
  */
-void Timer4_Init(void)
-{
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure={0};
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+void Timer4_Init(void) {
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = { 0 };
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 
-    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-    TIM_TimeBaseStructure.TIM_Period = 3600-1;
-    TIM_TimeBaseStructure.TIM_Prescaler =0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
+	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+	TIM_TimeBaseStructure.TIM_Period = 3000 - 1;
+	TIM_TimeBaseStructure.TIM_Prescaler = 0;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
 
-    TIM_SelectOutputTrigger(TIM4, TIM_TRGOSource_Update);
-    TIM_Cmd(TIM4, ENABLE);
+	TIM_SelectOutputTrigger(TIM4, TIM_TRGOSource_Update);
+	TIM_Cmd(TIM4, ENABLE);
 }
 
 /*********************************************************************
@@ -157,44 +163,42 @@ void Timer4_Init(void)
  *
  * @return  none
  */
-int main(void)
-{
+int main(void) {
 
 	Systick_Init();
 
-    uint8_t i=0;
+	uint8_t i = 0;
 
 	USART_Printf_Init(115200);
-	printf("SystemClk:%d\r\n",SystemCoreClock);
+	printf("SystemClk:%d\r\n", SystemCoreClock);
 	printf("Dual DAC Generation Test\r\n");
-	for(i=0;i<Num;i++)
-	{
-	    Dual_DAC_Value[i]=(DAC_Value[i]<<16) + DAC_Value[i];
-	    printf("0x%08x\r\n",Dual_DAC_Value[i]);
+	for (i = 0; i < Num; i++) {
+		Dual_DAC_Value[i] = (DAC_Value[i] << 16) + DAC_Value[Num - i - 1] / 2;
+		printf("0x%08x\r\n", Dual_DAC_Value[i]);
 	}
 
 	Dac_Interrupt_Init();
 	Dual_Dac_Init();
-    Dac_Dma_Init();
-    Timer4_Init();
+	Dac_Dma_Init();
+	Timer4_Init();
 
-    uint32_t now = 0, last_tick = 0;
+	uint32_t now = 0, last_tick = 0;
 
-    while(1)
-   {
+	while (1) {
 
-    	now = GetTick();
+		now = GetTick();
 
-    	if (now - last_tick >= 1000) {
+		if (now - last_tick >= 1000) {
 
-            printf("CNT=%d\r\n",TIM4->CNT);
-            printf("RD12BDHR=0x%04x\r\n",DAC->RD12BDHR);
-            printf("DOR1=0x%04x\r\n",DAC->DOR1);
-            printf("DOR2=0x%04x\r\n",DAC->DOR2);
-            printf("Full Count = %lu Half Count = %lu\n", full_count, half_count);
+			printf("CNT=%d\r\n", TIM4->CNT);
+			printf("RD12BDHR=0x%04x\r\n", DAC->RD12BDHR);
+			printf("DOR1=0x%04x\r\n", DAC->DOR1);
+			printf("DOR2=0x%04x\r\n", DAC->DOR2);
+			printf("Full Count = %lu Half Count = %lu\n", full_count,
+					half_count);
 
-    		last_tick = now;
-    	}
+			last_tick = now;
+		}
 
-   }
+	}
 }
