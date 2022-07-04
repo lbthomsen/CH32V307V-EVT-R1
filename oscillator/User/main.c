@@ -42,7 +42,7 @@ uint32_t dac_buffer[2 * BUFFER_SIZE]; // High 16 bit dac out 2, low 16 bit dac o
 
 uint32_t full_count = 0, half_count = 0;
 
-static inline void update_dac_buffer (uint32_t buffer_address) {
+static inline void update_dac_buffer (uint32_t *buffer_address) {
     for (uint8_t sample = 0; sample < BUFFER_SIZE; ++sample) {
         for (uint8_t oscillator = 0; oscillator < 2; ++oscillator) {
             osc[oscillator].last_value = osc[oscillator].amplitude * sinf (osc[oscillator].angle);
@@ -50,7 +50,7 @@ static inline void update_dac_buffer (uint32_t buffer_address) {
             if (osc[oscillator].angle > M_TWOPI)
                 osc[oscillator].angle -= M_TWOPI; // roll over
         }
-        dac_buffer[sample] = (((uint16_t) (MID_POINT + MID_POINT * osc[1].last_value)) << 16) | ((uint16_t) (MID_POINT + MID_POINT * osc[0].last_value));
+        buffer_address[sample] = (((uint16_t) (MID_POINT + MID_POINT * osc[1].last_value)) << 16) | ((uint16_t) (MID_POINT + MID_POINT * osc[0].last_value));
     }
 }
 
@@ -61,12 +61,12 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void DMA2_Channel3_IRQHandler (
 
     if (DMA_GetITStatus (DMA2_IT_TC3) != RESET) {
         ++full_count;
-        update_dac_buffer (dac_buffer[BUFFER_SIZE]);
+        update_dac_buffer (&dac_buffer[BUFFER_SIZE]);
         DMA_ClearITPendingBit (DMA2_IT_TC3);
     }
     else if (DMA_GetITStatus (DMA2_IT_HT3) != RESET) {
         ++half_count;
-        update_dac_buffer (dac_buffer[0]);
+        update_dac_buffer (&dac_buffer[0]);
         DMA_ClearITPendingBit (DMA2_IT_HT3);
     }
 
@@ -144,7 +144,7 @@ void Dac_Dma_Init (void) {
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(DAC->RD12BDHR);
     DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) &dac_buffer[0];
     DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-    DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE;
+    DMA_InitStructure.DMA_BufferSize = 2 * BUFFER_SIZE;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
