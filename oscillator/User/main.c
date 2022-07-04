@@ -13,46 +13,56 @@
 #include "systick.h"
 #include "debug.h"
 
+
+/* Global define */
+#define MAX_VALUE 4095
+#define MID_POINT 2047
+#define SAMPLE_FREQ 48000
+#define BUFFER_SIZE 48 // 48 kHz every 1 ms
+
 /* Global typedef */
 
 typedef struct {
 	float angle;
-	float angular_speed;
+	float angle_per_sample;
 	float amplitude;
-
+	float last_value;
 } Osc_TypeDef;
-
-/* Global define */
-#define BUFFER_SIZE 48 // 48 kHz every 1 ms
-#define Num 64
 
 /* Global Variable */
 
-Osc_TypeDef osc1, osc2;
+Osc_TypeDef osc[2]; // Two oscillators
 
 uint32_t dac_buffer[2 * BUFFER_SIZE]; // High 16 bit dac out 2, low 16 bit dac out 1
 
-uint32_t DAC_Value[Num] = { 2048, 2248, 2447, 2642, 2831, 3013, 3185, 3347,
-		3496, 3631, 3750, 3854, 3940, 4007, 4056, 4086, 4095, 4086, 4056, 4007,
-		3940, 3854, 3750, 3631, 3496, 3347, 3185, 3013, 2831, 2642, 2447, 2248,
-		2048, 1847, 1648, 1453, 1264, 1082, 910, 748, 599, 464, 345, 241, 155,
-		88, 39, 9, 0, 9, 39, 88, 155, 241, 345, 464, 599, 748, 910, 1082, 1264,
-		1453, 1648, 1847 };
-
-uint32_t Dual_DAC_Value[Num];
-
 uint32_t full_count = 0, half_count = 0;
+
+static inline void update_dac_buffer(uint32_t buffer_address) {
+	for (uint8_t sample = 0; sample < BUFFER_SIZE; ++sample) {
+		for (uint8_t oscillator = 0; oscillator < 2; ++oscillator) {
+			osc[oscillator].last_value = osc[oscillator].amplitude * sinf(osc[oscillator].angle);
+			osc[oscillator].angle += osc[oscillator].angle_per_sample; // rotate
+			if (osc[oscillator].angle > M_TWOPI) osc[oscillator].angle -= M_TWOPI; // roll over
+		}
+		//dac_buffer[sample] = ((uint16_t)(MID_POINT + MID_POINT * osc[1].last_value)) << 16 | ((uint16_t)osc[0].last_value);
+		//dac_buffer[sample] = ((uint16_t)(MID_POINT + MID_POINT * osc[0].last_value));
+		dac_buffer[sample] = (((uint16_t)(MID_POINT + MID_POINT * osc[1].last_value)) << 16) |  ((uint16_t)(MID_POINT + MID_POINT * osc[0].last_value));
+	}
+}
 
 __attribute__((interrupt("WCH-Interrupt-fast"))) void DMA2_Channel3_IRQHandler() {
 
+	GPIO_WriteBit(GPIOA, GPIO_Pin_6, Bit_SET);
 	if (DMA_GetITStatus(DMA2_IT_TC3) != RESET) {
 		++full_count;
+		update_dac_buffer(dac_buffer[BUFFER_SIZE]);
 		DMA_ClearITPendingBit(DMA2_IT_TC3);
 	} else if (DMA_GetITStatus(DMA2_IT_HT3) != RESET) {
 		++half_count;
+		update_dac_buffer(dac_buffer[0]);
 		DMA_ClearITPendingBit(DMA2_IT_HT3);
 	}
-
+	GPIO_WriteBit(GPIOA, GPIO_Pin_6, Bit_RESET);
 }
 
 void Dac_Interrupt_Init() {
@@ -85,6 +95,13 @@ void Dual_Dac_Init(void) {
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	GPIO_SetBits(GPIOA, GPIO_Pin_4);
 
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	// Debug out
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+
 	DAC_InitType.DAC_Trigger = DAC_Trigger_T4_TRGO;
 	DAC_InitType.DAC_WaveGeneration = DAC_WaveGeneration_None;
 	DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;
@@ -114,9 +131,9 @@ void Dac_Dma_Init(void) {
 
 	DMA_StructInit(&DMA_InitStructure);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) &(DAC->RD12BDHR);
-	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) &Dual_DAC_Value[0];
+	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t) &dac_buffer[0];
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
-	DMA_InitStructure.DMA_BufferSize = Num;
+	DMA_InitStructure.DMA_BufferSize = BUFFER_SIZE;
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
@@ -156,6 +173,15 @@ void Timer4_Init(void) {
 	TIM_Cmd(TIM4, ENABLE);
 }
 
+
+void set_freq(Osc_TypeDef *osc, float freq) {
+	osc->angle_per_sample = M_TWOPI / (SAMPLE_FREQ / freq);
+}
+
+void set_amplitude(Osc_TypeDef *osc, float amplitude) {
+	osc->amplitude = amplitude;
+}
+
 /*********************************************************************
  * @fn      main
  *
@@ -167,15 +193,12 @@ int main(void) {
 
 	Systick_Init();
 
-	uint8_t i = 0;
-
 	USART_Printf_Init(115200);
 	printf("SystemClk:%d\r\n", SystemCoreClock);
 	printf("Dual DAC Generation Test\r\n");
-	for (i = 0; i < Num; i++) {
-		Dual_DAC_Value[i] = (DAC_Value[i] << 16) + DAC_Value[Num - i - 1] / 2;
-		printf("0x%08x\r\n", Dual_DAC_Value[i]);
-	}
+
+	set_freq(&osc[0], 110); set_amplitude(&osc[0], 0.8);
+	set_freq(&osc[1], 220); set_amplitude(&osc[1], 0.4);
 
 	Dac_Interrupt_Init();
 	Dual_Dac_Init();
@@ -190,12 +213,7 @@ int main(void) {
 
 		if (now - last_tick >= 1000) {
 
-			printf("CNT=%d\r\n", TIM4->CNT);
-			printf("RD12BDHR=0x%04x\r\n", DAC->RD12BDHR);
-			printf("DOR1=0x%04x\r\n", DAC->DOR1);
-			printf("DOR2=0x%04x\r\n", DAC->DOR2);
-			printf("Full Count = %lu Half Count = %lu\n", full_count,
-					half_count);
+			printf("Full Count = %lu Half Count = %lu\n", full_count, half_count);
 
 			last_tick = now;
 		}
