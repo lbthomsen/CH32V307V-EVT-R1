@@ -116,7 +116,7 @@ void Dual_Dac_Init (void) {
     DAC_InitType.DAC_Trigger = DAC_Trigger_T4_TRGO;
     DAC_InitType.DAC_WaveGeneration = DAC_WaveGeneration_None;
     DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;
-    DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
+    DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Disable;
     DAC_Init (DAC_Channel_1, &DAC_InitType);
     DAC_Init (DAC_Channel_2, &DAC_InitType);
 
@@ -185,7 +185,7 @@ void Timer4_Init (void) {
 }
 
 void set_freq (Osc_TypeDef *osc, float freq) {
-    osc->angle_per_sample = M_TWOPI / (SAMPLE_FREQ / freq);
+    osc->angle_per_sample = freq * 2 * M_PI / SAMPLE_FREQ;
 }
 
 void set_amplitude (Osc_TypeDef *osc, float amplitude) {
@@ -207,9 +207,9 @@ int main (void) {
     printf ("SystemClk:%d\r\n", SystemCoreClock);
     printf ("Dual DAC Generation Test\r\n");
 
-    set_freq (&osc[0], 110);
+    set_freq (&osc[0], 44);
     set_amplitude (&osc[0], 0.8);
-    set_freq (&osc[1], 220);
+    set_freq (&osc[1], 22);
     set_amplitude (&osc[1], 0.4);
 
     Dac_Interrupt_Init ();
