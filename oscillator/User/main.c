@@ -207,9 +207,9 @@ int main (void) {
     printf ("SystemClk:%d\r\n", SystemCoreClock);
     printf ("Dual DAC Generation Test\r\n");
 
-    set_freq (&osc[0], 44);
+    set_freq (&osc[0], 440);
     set_amplitude (&osc[0], 0.8);
-    set_freq (&osc[1], 22);
+    set_freq (&osc[1], 880);
     set_amplitude (&osc[1], 0.4);
 
     Dac_Interrupt_Init ();
