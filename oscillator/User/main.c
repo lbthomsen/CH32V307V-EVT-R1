@@ -75,7 +75,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void DMA2_Channel3_IRQHandler (
 
 }
 
-void Dac_Interrupt_Init () {
+void DMA_Interrupt_Init () {
     /*Configuration interrupt priority*/
     NVIC_InitTypeDef NVIC_InitStructure = { 0 };
     NVIC_InitStructure.NVIC_IRQChannel = DMA2_Channel3_IRQn;
@@ -212,7 +212,7 @@ int main (void) {
     set_freq (&osc[1], 440);
     set_amplitude (&osc[1], 0.4);
 
-    Dac_Interrupt_Init ();
+    DMA_Interrupt_Init ();
     Dual_Dac_Init ();
     Dac_Dma_Init ();
     Timer4_Init ();
