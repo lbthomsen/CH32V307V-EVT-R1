@@ -116,7 +116,7 @@ void Dual_Dac_Init (void) {
     DAC_InitType.DAC_Trigger = DAC_Trigger_T4_TRGO;
     DAC_InitType.DAC_WaveGeneration = DAC_WaveGeneration_None;
     DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;
-    DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Disable;
+    DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
     DAC_Init (DAC_Channel_1, &DAC_InitType);
     DAC_Init (DAC_Channel_2, &DAC_InitType);
 
@@ -207,9 +207,9 @@ int main (void) {
     printf ("SystemClk:%d\r\n", SystemCoreClock);
     printf ("Dual DAC Generation Test\r\n");
 
-    set_freq (&osc[0], 440);
-    set_amplitude (&osc[0], 0.8);
-    set_freq (&osc[1], 880);
+    set_freq (&osc[0], 110);
+    set_amplitude (&osc[0], 1);
+    set_freq (&osc[1], 440);
     set_amplitude (&osc[1], 0.4);
 
     Dac_Interrupt_Init ();
@@ -217,18 +217,47 @@ int main (void) {
     Dac_Dma_Init ();
     Timer4_Init ();
 
-    uint32_t now = 0, last_tick = 0;
+    uint32_t now = 0, last_tick = 0, last_amp = 0, last_freq = 0;
+
+
+    float amp = 0.2, amp_change = 0.1;
+    float start_freq = 110, end_freq = 220, freq_change = 10, freq = 110;
 
     while (1) {
 
         now = GetTick ();
 
+        if (now - last_amp >= 100) {
+
+            set_amplitude(&osc[1], amp);
+
+            amp += amp_change;
+
+            if (amp < 0.2) amp_change = 0.1;
+            if (amp > 0.8) amp_change = -0.1;
+
+            last_amp = now;
+        }
+
+        if (now - last_freq >= 100) {
+
+            set_freq(&osc[0], freq);
+
+            freq += freq_change;
+
+            if (freq >= end_freq) freq_change = -10;
+            if (freq <= start_freq) freq_change = 10;
+
+            last_freq = now;
+        }
+
         if (now - last_tick >= 1000) {
 
-            printf ("Full Count = %lu Half Count = %lu\n", full_count, half_count);
+            printf ("Tick %lu: full = %lu half = %lu\n", now / 1000, full_count, half_count);
 
             last_tick = now;
         }
 
     }
 }
+
