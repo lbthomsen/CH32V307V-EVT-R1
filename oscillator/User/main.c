@@ -105,7 +105,7 @@ void Dual_Dac_Init (void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init (GPIOA, &GPIO_InitStructure);
-    GPIO_SetBits (GPIOA, GPIO_Pin_4);
+    //GPIO_SetBits (GPIOA, GPIO_Pin_4);
 
     // Throw a debug pulse out on PA6
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
@@ -113,7 +113,7 @@ void Dual_Dac_Init (void) {
     GPIO_Init (GPIOA, &GPIO_InitStructure);
 
     // DAC convertion triggered by Timer 4
-    DAC_InitType.DAC_Trigger = DAC_Trigger_T4_TRGO;
+    DAC_InitType.DAC_Trigger = DAC_Trigger_T8_TRGO;
     DAC_InitType.DAC_WaveGeneration = DAC_WaveGeneration_None;
     DAC_InitType.DAC_LFSRUnmask_TriangleAmplitude = DAC_LFSRUnmask_Bit0;
     DAC_InitType.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
@@ -162,26 +162,59 @@ void Dac_Dma_Init (void) {
 
 }
 
+void ADC_DMA_Init() {
+    GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+    ADC_InitTypeDef ADC_InitType = {0};
+
+    // Make sure the APB busses are clocked
+    RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOB, ENABLE);
+    RCC_APB2PeriphClockCmd (RCC_APB2Periph_GPIOC, ENABLE);
+    RCC_APB1PeriphClockCmd (RCC_APB2Periph_ADC1, ENABLE);
+    RCC_APB1PeriphClockCmd (RCC_APB2Periph_ADC2, ENABLE);
+
+    // Configure PC4 and PC5 for analog input
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init (GPIOC, &GPIO_InitStructure);
+
+    // Configure PC4 and PC5 for analog input
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init (GPIOB, &GPIO_InitStructure);
+
+    // Configure PA0, PA1, PA2 and PA3 for analog input
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init (GPIOA, &GPIO_InitStructure);
+
+    //ADC_InitType.
+
+}
+
 /*********************************************************************
- * @fn      Timer4_Init
+ * @fn      Timer_Init
  *
- * @brief   Initializes TIM4
+ * @brief   Initializes Timers
  *
  * @return  none
  */
-void Timer4_Init (void) {
+void Timer_Init (void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = { 0 };
-    RCC_APB1PeriphClockCmd (RCC_APB1Periph_TIM4, ENABLE);
+    RCC_APB2PeriphClockCmd (RCC_APB2Periph_TIM8, ENABLE);
 
     TIM_TimeBaseStructInit (&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = 3000 - 1;
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    TIM_TimeBaseInit (TIM4, &TIM_TimeBaseStructure);
+    TIM_TimeBaseInit (TIM8, &TIM_TimeBaseStructure);
 
-    TIM_SelectOutputTrigger (TIM4, TIM_TRGOSource_Update);
-    TIM_Cmd (TIM4, ENABLE);
+    TIM_SelectOutputTrigger (TIM8, TIM_TRGOSource_Update);
+    TIM_Cmd (TIM8, ENABLE);
 }
 
 void set_freq (Osc_TypeDef *osc, float freq) {
@@ -215,7 +248,7 @@ int main (void) {
     DMA_Interrupt_Init ();
     Dual_Dac_Init ();
     Dac_Dma_Init ();
-    Timer4_Init ();
+    Timer_Init ();
 
     uint32_t now = 0, last_tick = 0, last_amp = 0, last_freq = 0;
 
@@ -253,7 +286,7 @@ int main (void) {
 
         if (now - last_tick >= 1000) {
 
-            printf ("Tick %lu: full = %lu half = %lu\n", now / 1000, full_count, half_count);
+            printf ("Tick %lu: tim8 = %lu full = %lu half = %lu\n", now / 1000, TIM8->CNT, full_count, half_count);
 
             last_tick = now;
         }
