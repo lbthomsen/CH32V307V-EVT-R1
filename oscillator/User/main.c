@@ -191,7 +191,10 @@ void ADC_DMA_Init() {
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init (GPIOA, &GPIO_InitStructure);
 
-    //ADC_InitType.
+    ADC_InitType.ADC_Mode = ADC_Mode_RegSimult_AlterTrig;
+    ADC_InitType.ADC_ScanConvMode = ENABLE;
+    ADC_InitType.ADC_ContinuousConvMode = DISABLE;
+    ADC_InitType.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T8_TRGO;
 
 }
 
