@@ -1,6 +1,7 @@
 eclipse.preferences.version=1
 encoding//Core/core_riscv.c=GBK
 encoding//Core/core_riscv.h=GBK
+encoding//Ld/Link.ld=GBK
 encoding//Peripheral/inc/ch32v30x.h=GBK
 encoding//Peripheral/inc/ch32v30x_adc.h=GBK
 encoding//Peripheral/inc/ch32v30x_dac.h=GBK
@@ -8,6 +9,7 @@ encoding//Peripheral/inc/ch32v30x_dma.h=GBK
 encoding//Peripheral/inc/ch32v30x_gpio.h=GBK
 encoding//Peripheral/inc/ch32v30x_rcc.h=GBK
 encoding//Peripheral/inc/ch32v30x_tim.h=GBK
+encoding//Peripheral/src/ch32v30x_adc.c=GBK
 encoding//Peripheral/src/ch32v30x_dbgmcu.c=GBK
 encoding//Peripheral/src/ch32v30x_dma.c=GBK
 encoding//Peripheral/src/ch32v30x_fsmc.c=GBK
