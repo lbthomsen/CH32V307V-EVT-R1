@@ -84,6 +84,12 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void DMA1_Channel1_IRQHandler (
 
     ++adc_count;
 
+    if (DMA_GetITStatus(DMA1_IT_TC1) != RESET) {
+    	DMA_ClearITPendingBit(DMA1_IT_TC1);
+    } else if (DMA_GetITStatus(DMA1_IT_HT1) != RESET) {
+    	DMA_ClearITPendingBit(DMA1_IT_HT1);
+    }
+
     // Finally toggle debug out low again
     GPIO_WriteBit (GPIOA, GPIO_Pin_6, Bit_RESET);
 
@@ -210,7 +216,7 @@ void ADCs_Init () {
 
     ADC_InitType.ADC_Mode = ADC_Mode_Independent;
     ADC_InitType.ADC_ScanConvMode = ENABLE;
-    ADC_InitType.ADC_ContinuousConvMode = ENABLE;
+    ADC_InitType.ADC_ContinuousConvMode = DISABLE;
     ADC_InitType.ADC_DataAlign = ADC_DataAlign_Right;
     ADC_InitType.ADC_NbrOfChannel = 1;
     ADC_InitType.ADC_OutputBuffer = ADC_OutputBuffer_Enable;
@@ -221,8 +227,10 @@ void ADCs_Init () {
 //    ADC_InjectedSequencerLengthConfig (ADC1, 1);
 //    ADC_InjectedChannelConfig (ADC1, ADC_Channel_TempSensor, 1, ADC_SampleTime_239Cycles5);
 //
-//    ADC_ExternalTrigInjectedConvConfig (ADC1, ADC_ExternalTrigConv_T3_TRGO);
-//    ADC_ExternalTrigInjectedConvCmd (ADC1, ENABLE);
+    //ADC_ExternalTrigInjectedConvConfig (ADC1, ADC_ExternalTrigConv_T3_TRGO);
+    //ADC_ExternalTrigInjectedConvCmd (ADC1, ENABLE);
+
+    ADC_ExternalTrigConvCmd(ADC1, ENABLE);
 
     ADC_RegularChannelConfig(ADC1, ADC_Channel_1, 1, ADC_SampleTime_7Cycles5 );
     ADC_RegularChannelConfig(ADC1, ADC_Channel_TempSensor, 2, ADC_SampleTime_7Cycles5 );
