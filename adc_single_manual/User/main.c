@@ -55,9 +55,11 @@ void Initialize_ADC() {
 
     ADC_BufferCmd(ADC1, DISABLE);   // disable buffer
     ADC_ResetCalibration(ADC1);
-    while(ADC_GetResetCalibrationStatus(ADC1));
+    while (ADC_GetResetCalibrationStatus(ADC1))
+        ;
     ADC_StartCalibration(ADC1);
-    while(ADC_GetCalibrationStatus(ADC1));
+    while (ADC_GetCalibrationStatus(ADC1))
+        ;
     calibration_value = Get_CalibrationValue(ADC1);
 
     ADC_BufferCmd(ADC1, ENABLE);   // reenable buffer
@@ -93,18 +95,20 @@ void Initialize_ADC() {
  *
  * @return  none
  */
-u16 Get_ADC_Val(u8 ch)
-{
+u16 Get_ADC_Val(u8 ch) {
     u16 val;
 
-        ADC_RegularChannelConfig(ADC1, ch, 1, ADC_SampleTime_28Cycles5 );
-        ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+    ADC_RegularChannelConfig(ADC1, ch, 1, ADC_SampleTime_28Cycles5);
+    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 
-        while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC ));
+    uint32_t cnt = 0;
+    while (!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC)) ++cnt;
 
-        val = ADC_GetConversionValue(ADC1);
+    //printf("cnt = %lu\n", cnt);
 
-        return val;
+    val = ADC_GetConversionValue(ADC1);
+
+    return val;
 }
 
 /*********************************************************************
@@ -134,21 +138,19 @@ u16 Get_ADC_Val(u8 ch)
  *
  * @return  val - The Data conversion value.
  */
-u16 Get_ADC_Average(u8 ch,u8 times)
-{
-        u32 temp_val=0;
-        u8 t;
-        u16 val;
+u16 Get_ADC_Average(u8 ch, u8 times) {
+    u32 temp_val = 0;
+    u8 t;
+    u16 val;
 
-        for(t=0;t<times;t++)
-        {
-                temp_val+=Get_ADC_Val(ch);
-                //Delay_Ms(5);
-        }
+    for (t = 0; t < times; t++) {
+        temp_val += Get_ADC_Val(ch);
+        //Delay_Ms(5);
+    }
 
-        val = temp_val/times;
+    val = temp_val / times;
 
-        return val;
+    return val;
 }
 
 /*********************************************************************
@@ -160,13 +162,13 @@ u16 Get_ADC_Average(u8 ch,u8 times)
  *
  * @return  val+Calibrattion_Val - Conversion Value.
  */
-u16 Get_ConversionVal(s16 val)
-{
-        if((val + calibration_value) < 0) return 0;
-        if((calibration_value + val) > 4095||val==4095) return 4095;
-        return (val + calibration_value);
+u16 Get_ConversionVal(s16 val) {
+    if ((val + calibration_value) < 0)
+        return 0;
+    if ((calibration_value + val) > 4095 || val == 4095)
+        return 4095;
+    return (val + calibration_value);
 }
-
 
 /*********************************************************************
  * @fn      main
@@ -202,7 +204,7 @@ int main(void) {
 
         if (now - last_tick >= 1000) {
 
-            uint16_t vref_voltage = Get_ConversionVal(Get_ADC_Average( ADC_Channel_Vrefint, 10))  * 3300 / 4096;
+            uint16_t vref_voltage = Get_ConversionVal(Get_ADC_Average( ADC_Channel_Vrefint, 10)) * 3300 / 4096;
             uint16_t temp_voltage = Get_ConversionVal(Get_ADC_Average( ADC_Channel_TempSensor, 10)) * 3300 / 4096;
             int32_t temp_value = TempSensor_Volt_To_Temper(temp_voltage);
 
