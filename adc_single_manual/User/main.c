@@ -5,7 +5,7 @@
  * Date               : 2021/06/06
  * Description        : Main program body.
  * Copyright (c) 2022 Lars Boegild Thomsen
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  *******************************************************************************/
 
 #include <stdio.h>
@@ -49,17 +49,11 @@ void Initialize_ADC() {
 
     ADC_Cmd(ADC1, ENABLE);
 
-    //ADC_RegularChannelConfig (ADC1, ADC_Channel_TempSensor, 1, ADC_SampleTime_41Cycles5);
-
-    ADC_SoftwareStartConvCmd(ADC1, ENABLE);
-
     ADC_BufferCmd(ADC1, DISABLE);   // disable buffer
     ADC_ResetCalibration(ADC1);
-    while (ADC_GetResetCalibrationStatus(ADC1))
-        ;
+    while (ADC_GetResetCalibrationStatus(ADC1));
     ADC_StartCalibration(ADC1);
-    while (ADC_GetCalibrationStatus(ADC1))
-        ;
+    while (ADC_GetCalibrationStatus(ADC1));
     calibration_value = Get_CalibrationValue(ADC1);
 
     ADC_BufferCmd(ADC1, ENABLE);   // reenable buffer
@@ -145,7 +139,6 @@ u16 Get_ADC_Average(u8 ch, u8 times) {
 
     for (t = 0; t < times; t++) {
         temp_val += Get_ADC_Val(ch);
-        //Delay_Ms(5);
     }
 
     val = temp_val / times;
