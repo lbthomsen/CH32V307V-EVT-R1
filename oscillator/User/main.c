@@ -319,7 +319,7 @@ int main (void) {
 
     Systick_Init ();
 
-    USART_Printf_Init (115200);
+    Debug_Init (115200);
     printf ("SystemClk:%d\r\n", SystemCoreClock);
     printf ("Dual DAC Generation Test\r\n");
 

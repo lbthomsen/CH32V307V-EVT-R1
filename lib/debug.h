@@ -24,6 +24,6 @@
 //#define DEBUG   DEBUG_UART2
 //#define DEBUG   DEBUG_UART3
 
-void USART_Printf_Init(uint32_t baudrate);
+void Debug_Init(uint32_t baudrate);
 
 #endif 

@@ -55,7 +55,7 @@ int main(void) {
 	// Get the systick counter running
 	Systick_Init();
 
-	USART_Printf_Init(115200);
+	Debug_Init(115200);
 	printf("SystemClk:%d\r\n",SystemCoreClock);
 	printf("SysTick Test\r\n");
 

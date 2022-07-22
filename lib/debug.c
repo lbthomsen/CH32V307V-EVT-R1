@@ -8,10 +8,12 @@
 * Copyright (c) 2022 Lars Boegild Thomsen
 * SPDX-License-Identifier: MIT
 *******************************************************************************/
-#include <debug.h>
+
+#include <stddef.h>
+#include "ch32v30x.h"
 
 /*********************************************************************
- * @fn      USART_Printf_Init
+ * @fn      Debug_Init
  *
  * @brief   Initializes the USARTx peripheral.
  *
@@ -19,7 +21,7 @@
  *
  * @return  None
  */
-void USART_Printf_Init(uint32_t baudrate)
+void Debug_Init(uint32_t baudrate)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
     USART_InitTypeDef USART_InitStructure;
