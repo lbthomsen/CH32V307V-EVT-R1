@@ -19,7 +19,7 @@
 #define BUFFER_SIZE 48
 
 /* Global Variable */
-uint32_t adc_buffer[2 * BUFFER_SIZE * 6]; // 2 halves 6 channels
+uint16_t adc_buffer[2 * BUFFER_SIZE * 6]; // 2 halves 6 channels
 
 int16_t calibration_value;
 uint32_t tc_cnt = 0, ht_cnt = 0;
@@ -125,14 +125,14 @@ void Initialize_ADC() {
     ADC_DMACmd(ADC1, ENABLE);
     ADC_ExternalTrigConvCmd(ADC1, ENABLE);
 
-    // Let's run a self calibration on the ADC
-    ADC_BufferCmd(ADC1, DISABLE);   // disable buffer
-    ADC_ResetCalibration(ADC1);
-    while (ADC_GetResetCalibrationStatus(ADC1));
-    ADC_StartCalibration(ADC1);
-    while (ADC_GetCalibrationStatus(ADC1));
-    calibration_value = Get_CalibrationValue(ADC1);
-    ADC_BufferCmd(ADC1, ENABLE);   // reenable buffer
+//    // Let's run a self calibration on the ADC
+//    ADC_BufferCmd(ADC1, DISABLE);   // disable buffer
+//    ADC_ResetCalibration(ADC1);
+//    while (ADC_GetResetCalibrationStatus(ADC1));
+//    ADC_StartCalibration(ADC1);
+//    while (ADC_GetCalibrationStatus(ADC1));
+//    calibration_value = Get_CalibrationValue(ADC1);
+//    ADC_BufferCmd(ADC1, ENABLE);   // reenable buffer
 
 }
 
@@ -156,8 +156,8 @@ void Initialize_DMA() {
     DMA_InitStructure.DMA_BufferSize = 2 * BUFFER_SIZE * 6;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_MemoryDataSize_Word;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_MemoryDataSize_HalfWord;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
