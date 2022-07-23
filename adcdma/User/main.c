@@ -22,13 +22,13 @@
 #include "debug.h"
 
 /* Global Variable */
-u32 TxBuf[10];
+u32 TxBuf[2 * 96];
 u16 Adc_Val[2];
 u16 ADC_Val1, ADC_Val2;
 u8 Injected_IT_Flag, DMA_IT_Flag;
 s16 Calibrattion_Val1 = 0;
 s16 Calibrattion_Val2 = 0;
-u32 dma_cnt = 0;
+uint32_t gl_cnt = 0, ht_cnt = 0, tc_cnt = 0, te_cnt = 0, pa_cnt = 0;
 
 void ADC1_2_IRQHandler (void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void DMA1_Channel1_IRQHandler (void) __attribute__((interrupt("WCH-Interrupt-fast")));
@@ -63,23 +63,27 @@ void ADC_Function_Init (void) {
     ADC_DeInit (ADC1);
     ADC_DeInit (ADC2);
 
-    ADC_InitStructure.ADC_Mode = ADC_Mode_RegInjecSimult;
-    ADC_InitStructure.ADC_ScanConvMode = DISABLE;
+    ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
+    ADC_InitStructure.ADC_ScanConvMode = ENABLE;
     ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-    ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T8_TRGO;
+    ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T3_TRGO;
     ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_NbrOfChannel = 1;
-    ADC_InitStructure.ADC_OutputBuffer = ADC_OutputBuffer_Disable;
+    ADC_InitStructure.ADC_NbrOfChannel = 4;
+    ADC_InitStructure.ADC_OutputBuffer = ADC_OutputBuffer_Enable;
     ADC_InitStructure.ADC_Pga = ADC_Pga_1;
 
     ADC_Init (ADC1, &ADC_InitStructure);
     ADC_RegularChannelConfig (ADC1, ADC_Channel_2, 1, ADC_SampleTime_41Cycles5);
+    ADC_RegularChannelConfig (ADC1, ADC_Channel_3, 2, ADC_SampleTime_41Cycles5);
+    ADC_RegularChannelConfig (ADC1, ADC_Channel_3, 3, ADC_SampleTime_41Cycles5);
+    ADC_RegularChannelConfig (ADC1, ADC_Channel_3, 4, ADC_SampleTime_41Cycles5);
 
-    ADC_InjectedSequencerLengthConfig (ADC1, 1);
-    ADC_InjectedChannelConfig (ADC1, ADC_Channel_3, 1, ADC_SampleTime_41Cycles5);
+    //ADC_InjectedSequencerLengthConfig (ADC1, 1);
+    //ADC_InjectedChannelConfig (ADC1, ADC_Channel_3, 1, ADC_SampleTime_41Cycles5);
 
-    ADC_ExternalTrigInjectedConvConfig (ADC1, ADC_ExternalTrigConv_T8_TRGO);
-    ADC_ITConfig (ADC1, ADC_IT_JEOC, ENABLE);
+    //ADC_ExternalTrigInjectedConvConfig (ADC1, ADC_ExternalTrigConv_T8_TRGO);
+    //ADC_ITConfig (ADC1, ADC_IT_JEOC, ENABLE);
+    ADC_ExternalTrigConvCmd(ADC1, ENABLE);
     ADC_DMACmd (ADC1, ENABLE);
     ADC_Cmd (ADC1, ENABLE);
 
@@ -93,27 +97,27 @@ void ADC_Function_Init (void) {
 
     ADC_BufferCmd (ADC1, ENABLE);   //enable buffer
 
-    ADC_Init (ADC2, &ADC_InitStructure);
-    ADC_RegularChannelConfig (ADC2, ADC_Channel_4, 1, ADC_SampleTime_41Cycles5);
+    //ADC_Init (ADC2, &ADC_InitStructure);
+    //ADC_RegularChannelConfig (ADC2, ADC_Channel_4, 1, ADC_SampleTime_41Cycles5);
 
-    ADC_InjectedSequencerLengthConfig (ADC2, 1);
-    ADC_InjectedChannelConfig (ADC2, ADC_Channel_5, 1, ADC_SampleTime_41Cycles5);
+    //ADC_InjectedSequencerLengthConfig (ADC2, 1);
+    //ADC_InjectedChannelConfig (ADC2, ADC_Channel_5, 1, ADC_SampleTime_41Cycles5);
 
-    ADC_ExternalTrigInjectedConvConfig (ADC2, ADC_ExternalTrigConv_T8_TRGO);
+    //ADC_ExternalTrigInjectedConvConfig (ADC2, ADC_ExternalTrigConv_T8_TRGO);
     //ADC_ExternalTrigConvCmd (ADC2, ENABLE);
-    ADC_ExternalTrigInjectedConvCmd(ADC2, ENABLE);
+    //ADC_ExternalTrigInjectedConvCmd(ADC2, ENABLE);
 
-    ADC_ITConfig (ADC2, ADC_IT_JEOC, ENABLE);
-    ADC_Cmd (ADC2, ENABLE);
+    //ADC_ITConfig (ADC2, ADC_IT_JEOC, ENABLE);
+    //ADC_Cmd (ADC2, ENABLE);
 
-    ADC_BufferCmd (ADC2, DISABLE);   //disable buffer
-    ADC_ResetCalibration (ADC2);
-    while (ADC_GetResetCalibrationStatus (ADC2));
+    //ADC_BufferCmd (ADC2, DISABLE);   //disable buffer
+    //ADC_ResetCalibration (ADC2);
+    //while (ADC_GetResetCalibrationStatus (ADC2));
 
-    ADC_StartCalibration (ADC2);
-    Calibrattion_Val2 = Get_CalibrationValue (ADC2);
+    //ADC_StartCalibration (ADC2);
+    //Calibrattion_Val2 = Get_CalibrationValue (ADC2);
 
-    while (ADC_GetCalibrationStatus (ADC2));
+    //while (ADC_GetCalibrationStatus (ADC2));
 
 }
 
@@ -142,8 +146,8 @@ void DMA_Tx_Init (DMA_Channel_TypeDef *DMA_CHx, u32 ppadr, u32 memadr, u16 bufsi
     DMA_InitStructure.DMA_BufferSize = bufsize;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_PeripheralDataSize_HalfWord;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
@@ -169,23 +173,23 @@ void Timer_Init (void) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = { 0 };
 
     //RCC_APB1PeriphClockCmd (RCC_APB1Periph_TIM3, ENABLE);
-    RCC_APB2PeriphClockCmd (RCC_APB2Periph_TIM8, ENABLE);
+    RCC_APB1PeriphClockCmd (RCC_APB1Periph_TIM3, ENABLE);
 
     TIM_TimeBaseStructInit (&TIM_TimeBaseStructure);
     TIM_TimeBaseStructure.TIM_Period = 3000 - 1;
     TIM_TimeBaseStructure.TIM_Prescaler = 0;
-    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    //TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 
 
     //TIM_TimeBaseInit (TIM3, &TIM_TimeBaseStructure);
-    TIM_TimeBaseInit (TIM8, &TIM_TimeBaseStructure);
+    TIM_TimeBaseInit (TIM3, &TIM_TimeBaseStructure);
 
     //TIM_SelectOutputTrigger (TIM3, TIM_TRGOSource_Update);
-    TIM_SelectOutputTrigger (TIM8, TIM_TRGOSource_Update);
+    TIM_SelectOutputTrigger (TIM3, TIM_TRGOSource_Update);
 
     //TIM_Cmd (TIM3, ENABLE);
-    TIM_Cmd (TIM8, ENABLE);
+    TIM_Cmd (TIM3, ENABLE);
 
 //    RCC_APB1PeriphClockCmd (RCC_APB1Periph_TIM3, ENABLE);
 //
@@ -246,14 +250,16 @@ int main (void) {
     //Delay_Init ();
     printf ("SystemClk:%d\r\n", SystemCoreClock);
     ADC_Function_Init ();
-    printf ("ADC test\r\n");
+    printf ("ADC DMA test\r\n");
     printf ("CalibrattionValue1:%d\n", Calibrattion_Val1);
     printf ("CalibrattionValue2:%d\n", Calibrattion_Val2);
 
-    DMA_Tx_Init ( DMA1_Channel1, (u32) &ADC1->RDATAR, (u32) TxBuf, 1);
+    DMA_Tx_Init ( DMA1_Channel1, (u32) &ADC1->RDATAR, (u32) TxBuf, 96);
     DMA_Cmd ( DMA1_Channel1, ENABLE);
 
     Timer_Init();
+
+    ADC_ExternalTrigConvCmd(ADC1, ENABLE);
 
     uint32_t now = 0, last_run = 0;
 
@@ -263,10 +269,12 @@ int main (void) {
 
         if (now - last_run >= 1000) {
 
-            ADC_ExternalTrigConvCmd(ADC1, ENABLE);
-            ADC_ExternalTrigConvCmd(ADC2, ENABLE);
-            ADC_ExternalTrigInjectedConvCmd(ADC1, ENABLE);
-            ADC_ExternalTrigInjectedConvCmd(ADC2, ENABLE);
+            printf("\nTick %lu (tim3 cnt = %lu)\n", now/1000, TIM3->CNT);
+
+
+            //ADC_ExternalTrigConvCmd(ADC2, ENABLE);
+            //ADC_ExternalTrigInjectedConvCmd(ADC1, ENABLE);
+            //ADC_ExternalTrigInjectedConvCmd(ADC2, ENABLE);
 
             //ADC_SoftwareStartConvCmd (ADC1, ENABLE);
             //ADC_SoftwareStartConvCmd (ADC2, ENABLE);
@@ -279,12 +287,10 @@ int main (void) {
                 printf ("JADC2 ch5=%04d\r\n", Get_ConversionVal2 (ADC_Val2));
             }
 
-            if (DMA_IT_Flag == 1) {
-                DMA_IT_Flag = 0;
                 printf ("ADC1 ch2 = %d\r\n", Get_ConversionVal1 (Adc_Val[0]));
-                printf ("ADC2 ch4 = %d\r\n", Get_ConversionVal2 (Adc_Val[1]));
-                printf ("DMA  cnt = %d\r\n", dma_cnt);
-            }
+                printf ("ADC1 ch = %d\r\n", Get_ConversionVal2 (Adc_Val[1]));
+                printf ("ADC2 ch4 = %d\r\n", Get_ConversionVal2 (Adc_Val[2]));
+                printf ("DMA GL = %d HT = %d TC = %d TE = %d\n", gl_cnt, ht_cnt, tc_cnt, te_cnt);
 
             last_run = now;
 
@@ -319,14 +325,31 @@ void ADC1_2_IRQHandler () {
  * @return  none
  */
 void DMA1_Channel1_IRQHandler () {
-    if (DMA_GetITStatus (DMA1_IT_TC1) == SET) {
-        DMA_IT_Flag = 1;
+
+    if (DMA_GetITStatus(DMA1_IT_HT1) == SET) {
+        DMA_ClearITPendingBit(DMA1_IT_HT1);
+        ++ht_cnt;
+    } else if (DMA_GetITStatus(DMA1_IT_TC1) == SET) {
+        DMA_ClearITPendingBit(DMA1_IT_TC1);
+        ++tc_cnt;
+    } else if (DMA_GetITStatus(DMA1_IT_TE1) == SET) {
+        DMA_ClearITPendingBit(DMA1_IT_TE1);
+        ++te_cnt;
+    } else if (DMA_GetITStatus(DMA1_IT_GL1) == SET) {
         DMA_ClearITPendingBit (DMA1_IT_GL1);
-
-        Adc_Val[0] = TxBuf[0] & 0xffff;
-        Adc_Val[1] = (TxBuf[0] >> 16) & 0xffff;
-
-        ++dma_cnt;
+        ++gl_cnt;
+    } else {
+        ++pa_cnt; // Panic
     }
+
+//    if (DMA_GetITStatus (DMA1_IT_TC1) == SET) {
+//        DMA_IT_Flag = 1;
+//        DMA_ClearITPendingBit (DMA1_IT_GL1);
+//
+//        Adc_Val[0] = TxBuf[0] & 0xffff;
+//        Adc_Val[1] = (TxBuf[0] >> 16) & 0xffff;
+//
+//        ++dma_cnt;
+//    }
 }
 
