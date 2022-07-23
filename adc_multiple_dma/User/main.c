@@ -104,22 +104,22 @@ void Initialize_ADC() {
     ADC_DeInit(ADC1); // Start clean
 
     ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;  // No fancy injection stuff for now
-    ADC_InitStructure.ADC_ScanConvMode = DISABLE;       // Go through all
+    ADC_InitStructure.ADC_ScanConvMode = ENABLE;       // Go through all
     ADC_InitStructure.ADC_ContinuousConvMode = DISABLE; // And just do it once
     ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T3_TRGO; // We will ASK when needed
     ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-    ADC_InitStructure.ADC_OutputBuffer = ADC_OutputBuffer_Enable;
-    ADC_InitStructure.ADC_NbrOfChannel = 6;
+    ADC_InitStructure.ADC_OutputBuffer = ADC_OutputBuffer_Disable;
+    ADC_InitStructure.ADC_NbrOfChannel =6;
     ADC_InitStructure.ADC_Pga = ADC_Pga_1;
 
     ADC_Init(ADC1, &ADC_InitStructure); // Kick it into gear
 
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_2, 1, ADC_SampleTime_41Cycles5);
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_3, 2, ADC_SampleTime_41Cycles5);
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_41Cycles5);
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_5, 4, ADC_SampleTime_41Cycles5);
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_TempSensor, 5, ADC_SampleTime_41Cycles5);
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_Vrefint, 6, ADC_SampleTime_41Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_2, 1, ADC_SampleTime_7Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_3, 2, ADC_SampleTime_7Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 3, ADC_SampleTime_7Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_5, 4, ADC_SampleTime_7Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_TempSensor, 5, ADC_SampleTime_7Cycles5);
+    ADC_RegularChannelConfig(ADC1, ADC_Channel_Vrefint, 6, ADC_SampleTime_7Cycles5);
 
     ADC_Cmd(ADC1, ENABLE);
     ADC_DMACmd(ADC1, ENABLE);
@@ -156,8 +156,8 @@ void Initialize_DMA() {
     DMA_InitStructure.DMA_BufferSize = 2 * BUFFER_SIZE * 6;
     DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_MemoryDataSize_HalfWord;
-    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_MemoryDataSize_Word;
+    DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
     DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
     DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
     DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
